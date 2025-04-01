@@ -7,9 +7,13 @@ const nextConfig = {
         {
           source: '/api/:path*',
           destination: 'http://localhost:8000/api/:path*',
+          basePath: false,
         },
       ]
     },
+    serverRuntimeConfig: {
+      apiTimeout: 120000 // 2 minutes
+    }
   }
   
   module.exports = nextConfig

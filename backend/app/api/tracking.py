@@ -1,6 +1,6 @@
 # backend/app/api/tracking.py
 from fastapi import APIRouter, HTTPException, Query
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from ..utils.data_processor import DataProcessor
 import os
@@ -58,10 +58,8 @@ async def get_shipments_by_status(
     Returns:
         List of shipments matching the status
     """
-    # In a real implementation, this would query a database
-    # For the prototype, we'll return mock data
     try:
-        # Mock statuses
+        # Valid statuses
         valid_statuses = ["in_transit", "delivered", "customs", "processing"]
         
         if status.lower() not in valid_statuses:
@@ -70,59 +68,13 @@ async def get_shipments_by_status(
                 detail=f"Invalid status. Valid options are: {', '.join(valid_statuses)}"
             )
         
-        # Mock data for different statuses
-        mock_shipments = []
-        
-        base_shipment = {
-            "origin": "Delhi, India",
-            "destination": "New York, USA",
-            "weight": "235.5 kg",
-            "service": "Express Air Freight"
-        }
-        
-        # Generate different shipments based on status
-        if status.lower() == "in_transit":
-            for i in range(min(limit, 5)):
-                mock_shipments.append({
-                    "id": f"AWB1098{3762 + i}",
-                    "status": "In Transit",
-                    "current_location": "Dubai, UAE",
-                    "estimated_arrival": "2025-03-18",
-                    **base_shipment
-                })
-        elif status.lower() == "delivered":
-            for i in range(min(limit, 5)):
-                mock_shipments.append({
-                    "id": f"AWB1098{3255 + i}",
-                    "status": "Delivered",
-                    "delivery_date": "2025-03-14",
-                    "recipient": "John Smith",
-                    **base_shipment
-                })
-        elif status.lower() == "customs":
-            for i in range(min(limit, 3)):
-                mock_shipments.append({
-                    "id": f"AWB1098{3445 + i}",
-                    "status": "Customs Clearance",
-                    "current_location": "JFK Airport, USA",
-                    "hold_reason": "Documentation Review",
-                    "estimated_clearance": "2025-03-17",
-                    **base_shipment
-                })
-        elif status.lower() == "processing":
-            for i in range(min(limit, 4)):
-                mock_shipments.append({
-                    "id": f"AWB1098{3390 + i}",
-                    "status": "Processing",
-                    "current_location": "Delhi Air Cargo Terminal, India",
-                    "estimated_departure": "2025-03-19",
-                    **base_shipment
-                })
+        # Get shipments from data processor using real data
+        shipments = data_processor.get_shipments_by_status(status, limit)
         
         return {
             "status": status,
-            "count": len(mock_shipments),
-            "shipments": mock_shipments
+            "count": len(shipments),
+            "shipments": shipments
         }
     
     except HTTPException:
@@ -132,3 +84,173 @@ async def get_shipments_by_status(
             status_code=500,
             detail=f"Error retrieving shipments: {str(e)}"
         )
+
+@router.get("/recent")
+async def get_recent_shipments(limit: int = 5) -> List[Dict[str, Any]]:
+    """
+    Get recent shipments tracked through the system.
+    
+    Args:
+        limit: Maximum number of results to return
+        
+    Returns:
+        List of recent shipment data
+    """
+    try:
+        # Get combination of different status shipments
+        in_transit = data_processor.get_shipments_by_status("in_transit", limit=2)
+        delivered = data_processor.get_shipments_by_status("delivered", limit=2) 
+        processing = data_processor.get_shipments_by_status("processing", limit=1)
+        
+        # Combine and limit to requested number
+        recent_shipments = in_transit + delivered + processing
+        return recent_shipments[:limit]
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving recent shipments: {str(e)}"
+        )
+
+@router.get("/sample-awbs")
+async def get_sample_awbs(count: int = 5) -> List[str]:
+    """
+    Get sample AWB numbers from the dataset for testing.
+    
+    Args:
+        count: Number of AWBs to return
+        
+    Returns:
+        List of AWB numbers
+    """
+    try:
+        # Hardcoded samples that we know work (as a fallback)
+        hardcoded_samples = ["23258167594", "23258167605"]
+        
+        # If the data processor isn't initialized or has no data, return hardcoded samples
+        if data_processor is None or data_processor.df is None or data_processor.df.empty:
+            return hardcoded_samples[:count]
+        
+        # Try to get AWB numbers from the data
+        if 'AWB_NO' in data_processor.df.columns:
+            # Get non-null AWB numbers and convert to strings
+            valid_awbs = []
+            
+            # Use iterrows for safer processing
+            for _, row in data_processor.df.head(100).iterrows():
+                if pd.notna(row['AWB_NO']):
+                    try:
+                        awb = str(int(row['AWB_NO']))
+                        valid_awbs.append(awb)
+                        # Once we have enough samples, break
+                        if len(valid_awbs) >= count:
+                            break
+                    except:
+                        continue
+            
+            # If we found valid AWBs, return them
+            if valid_awbs:
+                return valid_awbs[:count]
+        
+        # If we couldn't get AWBs from the data, return hardcoded samples
+        return hardcoded_samples[:count]
+    
+    except Exception as e:
+        # Log the error but don't crash
+        print(f"Error getting sample AWBs: {str(e)}")
+        return ["23258167594", "23258167605"]
+
+@router.get("/available-awbs")
+async def get_available_awbs(limit: int = 20) -> Dict[str, Any]:
+    """
+    Get a list of available AWB numbers from the dataset.
+    
+    Args:
+        limit: Maximum number of AWBs to return
+        
+    Returns:
+        Dictionary with list of AWB numbers and count
+    """
+    try:
+        if data_processor is None or data_processor.df is None or data_processor.df.empty:
+            return {"count": 0, "awbs": []}
+        
+        # A list to store AWB numbers we've verified work
+        valid_awbs = []
+        
+        # Get a larger sample to filter through
+        sample_df = data_processor.df.head(limit * 5)
+        
+        # Use iterrows for safer processing
+        for _, row in sample_df.iterrows():
+            if pd.notna(row['AWB_NO']):
+                try:
+                    awb = str(int(row['AWB_NO']))
+                    
+                    # Test if this AWB actually returns data
+                    tracking_data = data_processor.get_shipment_tracking(awb)
+                    if tracking_data is not None:
+                        valid_awbs.append(awb)
+                    
+                    # Once we have enough samples, break
+                    if len(valid_awbs) >= limit:
+                        break
+                except:
+                    continue
+        
+        return {
+            "count": len(valid_awbs),
+            "awbs": valid_awbs
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving available AWBs: {str(e)}"
+        )
+
+@router.get("/awb-info")
+async def get_awb_info() -> Dict[str, Any]:
+    """
+    Get information about AWB numbers in the dataset.
+    
+    Returns:
+        Dictionary with information about AWB numbers
+    """
+    try:
+        if data_processor is None or data_processor.df is None or data_processor.df.empty:
+            return {"count": 0, "info": "No data available"}
+        
+        # Get basic stats about AWB_NO column
+        total_count = len(data_processor.df)
+        non_null_count = data_processor.df['AWB_NO'].notna().sum()
+        
+        # Get examples of different lengths
+        sample_awbs = []
+        
+        # Convert to string and get sample of different lengths
+        data_processor.df['AWB_STR'] = data_processor.df['AWB_NO'].astype(str)
+        
+        # Get lengths of AWB numbers
+        awb_lengths = data_processor.df['AWB_STR'].str.len().value_counts().to_dict()
+        
+        # Get examples of each length
+        examples_by_length = {}
+        for length, count in awb_lengths.items():
+            examples = data_processor.df[data_processor.df['AWB_STR'].str.len() == length]['AWB_STR'].head(3).tolist()
+            examples_by_length[str(length)] = {
+                "count": int(count),
+                "examples": examples
+            }
+        
+        return {
+            "total_records": total_count,
+            "non_null_awbs": int(non_null_count),
+            "lengths": examples_by_length
+        }
+    
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": "Error analyzing AWB numbers"
+        }

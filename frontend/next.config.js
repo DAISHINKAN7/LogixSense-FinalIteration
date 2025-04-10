@@ -11,6 +11,9 @@ const nextConfig = {
         },
       ]
     },
+    experimental: {
+      proxyTimeout: 600000, // 10 minutes
+    },
     serverRuntimeConfig: {
       apiTimeout: 120000 // 2 minutes
     }

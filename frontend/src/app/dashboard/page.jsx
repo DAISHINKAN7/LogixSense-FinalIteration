@@ -1,238 +1,319 @@
 // src/app/dashboard/page.jsx
+'use client';
+
+import { useState, useEffect } from 'react';
 import { 
-    Card, 
-    CardContent, 
-    CardHeader, 
-    CardTitle 
-  } from '@/components/ui/card';
-  import { 
-    TrendingUp, 
-    TrendingDown, 
-    AlertTriangle, 
-    CheckCircle, 
-    Truck, 
-    Package, 
-    ArrowRight 
-  } from 'lucide-react';
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  CheckCircle, 
+  Truck, 
+  Package, 
+  ArrowRight,
+  RefreshCw,
+  Clock,
+  DollarSign
+} from 'lucide-react';
+import DestinationChart from '@/components/DestinationChart';
+import WeightDistributionChart from '@/components/WeightDistributionChart';
+import MonthlyTrendsChart from '@/components/MonthlyTrendsChart';
+import CarrierDistributionChart from '@/components/CarrierDistributionChart';
+
+export default function DashboardPage() {
+  // State for API data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // Function to handle data refresh
+  const refreshData = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await fetchDashboardData();
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Function to fetch all dashboard data in a single call
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch all dashboard metrics in a single API call
+      const response = await fetch('/api/dashboard/metrics');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dashboard data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setDashboardData(data);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setError("Failed to load dashboard data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  export default function DashboardPage() {
-    // In a real implementation, this data would be fetched from the API
-    const metricsData = {
-      activeShipments: 1243,
-      activeTrend: +12.5,
-      totalWeight: "48,392",
-      weightTrend: +8.3,
-      avgDeliveryTime: 4.7,
-      deliveryTimeTrend: -0.3,
-      totalRevenue: "₹ 24.7M",
-      revenueTrend: +15.2,
-      // Mock data for chart
-      recentShipments: [
-        { id: 'AWB10983762', destination: 'New York, USA', status: 'In Transit', weight: '342 kg', value: '₹ 284,500' },
-        { id: 'AWB10983571', destination: 'Dubai, UAE', status: 'Delivered', weight: '128 kg', value: '₹ 95,200' },
-        { id: 'AWB10983445', destination: 'Singapore', status: 'Customs Clearance', weight: '205 kg', value: '₹ 173,800' },
-        { id: 'AWB10983390', destination: 'London, UK', status: 'Processing', weight: '178 kg', value: '₹ 152,600' },
-        { id: 'AWB10983255', destination: 'Tokyo, Japan', status: 'Delivered', weight: '93 kg', value: '₹ 87,400' },
-      ],
-      alerts: [
-        { id: 1, type: 'warning', message: 'Potential delay on AWB10983762 due to customs inspection' },
-        { id: 2, type: 'success', message: 'AWB10983255 delivered ahead of schedule' },
-        { id: 3, type: 'error', message: 'Missing documentation for AWB10983390, requires immediate action' },
-      ]
-    };
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Format last updated timestamp
+  const formattedLastUpdated = lastUpdated.toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
   
+  // If loading, show loading state
+  if (loading && !dashboardData) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Last updated: March 15, 2025, 09:45 AM IST</span>
-            <button className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-              <svg 
-                width="20" 
-                height="20" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                <path d="M8 16H3v5" />
-              </svg>
-            </button>
-          </div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="animate-spin mb-4">
+          <RefreshCw size={32} className="text-gray-400" />
         </div>
-  
-        {/* Key Performance Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Active Shipments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{metricsData.activeShipments}</div>
-                  <div className="flex items-center mt-1">
-                    {metricsData.activeTrend > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={metricsData.activeTrend > 0 ? "text-green-500" : "text-red-500"}>
-                      {Math.abs(metricsData.activeTrend)}%
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">vs last month</span>
-                  </div>
-                </div>
-                <div className="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-                  <Truck className="w-6 h-6 text-blue-600 dark:text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-  
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Total Cargo Weight
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{metricsData.totalWeight} kg</div>
-                  <div className="flex items-center mt-1">
-                    {metricsData.weightTrend > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={metricsData.weightTrend > 0 ? "text-green-500" : "text-red-500"}>
-                      {Math.abs(metricsData.weightTrend)}%
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">vs last month</span>
-                  </div>
-                </div>
-                <div className="h-12 w-12 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                  <Package className="w-6 h-6 text-green-600 dark:text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-  
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Avg. Delivery Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{metricsData.avgDeliveryTime} days</div>
-                  <div className="flex items-center mt-1">
-                    {metricsData.deliveryTimeTrend < 0 ? (
-                      <TrendingDown className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <TrendingUp className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={metricsData.deliveryTimeTrend < 0 ? "text-green-500" : "text-red-500"}>
-                      {Math.abs(metricsData.deliveryTimeTrend)} days
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">vs last month</span>
-                  </div>
-                </div>
-                <div className="h-12 w-12 bg-purple-50 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
-                  <svg 
-                    className="w-6 h-6 text-purple-600 dark:text-purple-500" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-  
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Total Revenue
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{metricsData.totalRevenue}</div>
-                  <div className="flex items-center mt-1">
-                    {metricsData.revenueTrend > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={metricsData.revenueTrend > 0 ? "text-green-500" : "text-red-500"}>
-                      {Math.abs(metricsData.revenueTrend)}%
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">vs last month</span>
-                  </div>
-                </div>
-                <div className="h-12 w-12 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center">
-                  <svg 
-                    className="w-6 h-6 text-amber-600 dark:text-amber-500" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <h2 className="text-xl font-semibold mb-2">Loading Dashboard</h2>
+        <p className="text-gray-500">Please wait while we fetch your logistics data...</p>
+      </div>
+    );
+  }
+
+  // If error, show error state
+  if (error && !dashboardData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <AlertTriangle size={32} className="text-red-500 mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Error Loading Dashboard</h2>
+        <p className="text-red-500 mb-4">{error}</p>
+        <button 
+          onClick={refreshData} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <>
+              <RefreshCw size={16} className="mr-2 animate-spin" />
+              Trying Again...
+            </>
+          ) : (
+            <>
+              <RefreshCw size={16} className="mr-2" />
+              Try Again
+            </>
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // Extract data from the dashboard data
+  const summaryData = dashboardData?.summary || {};
+  const recentShipments = dashboardData?.recentShipments || [];
+  const alerts = dashboardData?.alerts || [];
+
+  // Render dashboard with fetched data
+  return (
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold tracking-tight">Logistics Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">
+            Last updated: {formattedLastUpdated}
+          </span>
+          <button 
+            className={`p-1 rounded-md hover:bg-gray-100 ${
+              refreshing ? 'animate-spin text-blue-500' : ''
+            }`}
+            onClick={refreshData}
+            disabled={refreshing}
+            aria-label="Refresh dashboard data"
+          >
+            <RefreshCw size={20} />
+          </button>
         </div>
-  
-        {/* Alerts and Recent Shipments */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Recent Shipments</CardTitle>
-              </CardHeader>
-              <CardContent>
+      </div>
+
+      {/* Key Performance Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-white-500">
+              Active Shipments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{summaryData?.activeShipments?.toLocaleString() || "0"}</div>
+                <div className="flex items-center mt-1">
+                  {summaryData?.trends?.activeShipmentsTrend > 0 ? (
+                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                  )}
+                  <span className={summaryData?.trends?.activeShipmentsTrend > 0 ? "text-green-500" : "text-red-500"}>
+                    {Math.abs(summaryData?.trends?.activeShipmentsTrend || 0)}%
+                  </span>
+                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-blue-50 rounded-full flex items-center justify-center">
+                <Truck className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Total Cargo Weight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{summaryData?.totalWeight?.toLocaleString() || "0"} kg</div>
+                <div className="flex items-center mt-1">
+                  {summaryData?.trends?.weightTrend > 0 ? (
+                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                  )}
+                  <span className={summaryData?.trends?.weightTrend > 0 ? "text-green-500" : "text-red-500"}>
+                    {Math.abs(summaryData?.trends?.weightTrend || 0)}%
+                  </span>
+                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-green-50 rounded-full flex items-center justify-center">
+                <Package className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Avg. Delivery Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{summaryData?.avgDeliveryTime || "0"} days</div>
+                <div className="flex items-center mt-1">
+                  {summaryData?.trends?.deliveryTimeTrend < 0 ? (
+                    <TrendingDown className="w-4 h-4 text-green-500 mr-1" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4 text-red-500 mr-1" />
+                  )}
+                  <span className={summaryData?.trends?.deliveryTimeTrend < 0 ? "text-green-500" : "text-red-500"}>
+                    {Math.abs(summaryData?.trends?.deliveryTimeTrend || 0)} days
+                  </span>
+                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-purple-50 rounded-full flex items-center justify-center">
+                <Clock className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Total Revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{summaryData?.totalRevenue || "₹ 0"}</div>
+                <div className="flex items-center mt-1">
+                  {summaryData?.trends?.revenueTrend > 0 ? (
+                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-500 mr-1" />
+                  )}
+                  <span className={summaryData?.trends?.revenueTrend > 0 ? "text-green-500" : "text-red-500"}>
+                    {Math.abs(summaryData?.trends?.revenueTrend || 0)}%
+                  </span>
+                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
+                </div>
+              </div>
+              <div className="h-12 w-12 bg-amber-50 rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-[420px]">
+          <DestinationChart data={dashboardData?.destinations} />
+        </div>
+        <div className="h-[420px]">
+          <WeightDistributionChart data={dashboardData?.weightDistribution} />
+        </div>
+      </div>
+
+      {/* Alerts and Recent Shipments */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+            <CardHeader className="pb-2 border-b">
+              <CardTitle className="text-lg font-medium">
+                Recent Shipments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading && !recentShipments.length ? (
+                <div className="flex justify-center p-8">
+                  <RefreshCw size={24} className="animate-spin text-gray-400" />
+                </div>
+              ) : recentShipments.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b dark:border-gray-700">
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">AWB</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Destination</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
-                        <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Weight</th>
-                        <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Value</th>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-gray-500">AWB</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-500">Destination</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-500">Weight</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-500">Value</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {metricsData.recentShipments.map((shipment, index) => (
+                      {recentShipments.map((shipment, index) => (
                         <tr 
                           key={shipment.id} 
-                          className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                            index !== metricsData.recentShipments.length - 1 ? 'border-b dark:border-gray-700' : ''
+                          className={`hover:bg-gray-50 ${
+                            index !== recentShipments.length - 1 ? 'border-b' : ''
                           }`}
                         >
                           <td className="py-3 px-4 font-medium">{shipment.id}</td>
@@ -241,12 +322,12 @@ import {
                             <span className={`
                               inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                               ${shipment.status === 'Delivered' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-500'
+                                ? 'bg-green-100 text-green-800'
                                 : shipment.status === 'In Transit'
-                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-500'
+                                ? 'bg-blue-100 text-blue-800'
                                 : shipment.status === 'Customs Clearance'
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-500'
-                                : 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-500'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-purple-100 text-purple-800'
                               }
                             `}>
                               {shipment.status}
@@ -259,22 +340,34 @@ import {
                     </tbody>
                   </table>
                 </div>
-                <div className="mt-4 text-right">
-                  <a href="/shipments" className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline inline-flex items-center">
-                    View all shipments <ArrowRight className="w-4 h-4 ml-1" />
-                  </a>
+              ) : (
+                <div className="text-center p-8 text-gray-500">
+                  No recent shipments found
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-  
-          <Card className="h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Alerts & Notifications</CardTitle>
-            </CardHeader>
-            <CardContent>
+              )}
+              <div className="mt-4 text-right">
+                <a href="/shipments" className="text-sm font-medium text-blue-600 hover:underline inline-flex items-center">
+                  View all shipments <ArrowRight className="w-4 h-4 ml-1" />
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="h-full">
+          <CardHeader className="pb-2 border-b">
+            <CardTitle className="text-lg font-medium">
+              Alerts & Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading && !alerts.length ? (
+              <div className="flex justify-center p-8">
+                <RefreshCw size={24} className="animate-spin text-gray-400" />
+              </div>
+            ) : alerts.length > 0 ? (
               <div className="space-y-4">
-                {metricsData.alerts.map((alert) => (
+                {alerts.map((alert) => (
                   <div key={alert.id} className="flex items-start space-x-3">
                     {alert.type === 'warning' ? (
                       <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
@@ -297,21 +390,70 @@ import {
                     )}
                     <div>
                       <p className="text-sm">{alert.message}</p>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-gray-500">
                         {alert.type === 'warning' ? 'Warning' : alert.type === 'success' ? 'Success' : 'Error'}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 text-center pt-4 border-t dark:border-gray-700">
-                <a href="/alerts" className="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline inline-flex items-center">
-                  View all alerts <ArrowRight className="w-4 h-4 ml-1" />
-                </a>
+            ) : (
+              <div className="text-center p-8 text-gray-500">
+                No alerts at this time
               </div>
+            )}
+            <div className="mt-4 text-center pt-4 border-t">
+              <a href="/alerts" className="text-sm font-medium text-blue-600 hover:underline inline-flex items-center">
+                View all alerts <ArrowRight className="w-4 h-4 ml-1" />
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+{/* Additional Charts Row */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-[400px]">
+          <Card className="h-full">
+            <CardHeader className="pb-2 border-b">
+              <CardTitle className="text-lg font-medium">
+                Monthly Shipment Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
+                </div>
+              ) : (
+                <div className="h-full">
+                  <MonthlyTrendsChart data={dashboardData?.monthlyTrends} />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="h-[400px]">
+          <Card className="h-full">
+            <CardHeader className="pb-2 border-b">
+              <CardTitle className="text-lg font-medium">
+                Shipments by Carrier
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
+                </div>
+              ) : (
+                <div className="h-full">
+                  <CarrierDistributionChart data={dashboardData?.carrierData} loading={loading} />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

@@ -1,212 +1,186 @@
-// src/app/assistant/page.jsx
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send, Loader2, Bot, User, FileText, Info, RefreshCw, ChevronRight, X } from 'lucide-react';
+import React from 'react';
+import LogixAssistant from '@/components/LogixAssistant';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sparkles, Info, BookOpen } from 'lucide-react';
 
-export default function AssistantPage() {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: 'assistant',
-      content: "Hello! I'm LogixSense AI Assistant. How can I help you with your logistics operations today?",
-      timestamp: new Date().toISOString(),
-    }
-  ]);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const endOfMessagesRef = useRef(null);
-  
-  // Mock suggestions
-  const suggestions = [
-    "Analyze my shipment trends over the last month",
-    "What's the best shipping route to Singapore?",
-    "Help me optimize my shipping costs",
-    "Identify potential delays in my supply chain",
-    "Generate a risk assessment report"
-  ];
-
-  // Function to handle user messages
-  const handleSendMessage = (content = inputValue) => {
-    if (!content.trim()) return;
-
-    // Add user message
-    const userMessage = {
-      id: messages.length + 1,
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setShowSuggestions(false);
-    setIsLoading(true);
-
-    // Simulate AI response (would be an API call in production)
-    setTimeout(() => {
-      let responseContent = '';
-
-      // Determine response based on message content
-      if (content.toLowerCase().includes('shipment') && content.toLowerCase().includes('trend')) {
-        responseContent = "Based on your shipment data for the last month, I've noticed a 12% increase in volume to Asian destinations, particularly Singapore and Japan. The average shipment weight has decreased by 5%, indicating a shift towards higher-value, lower-weight goods. Would you like me to generate a detailed trend report?";
-      } else if (content.toLowerCase().includes('route') && content.toLowerCase().includes('singapore')) {
-        responseContent = "For shipments to Singapore, I recommend route SK-104 via Bangkok. This route has shown 97.8% on-time performance over the last quarter with an average transit time of 3.2 days. Alternative route SK-108 via Hong Kong has lower costs but 4.5 days average transit time. Would you like to see a comparison of these routes?";
-      } else if (content.toLowerCase().includes('cost') && content.toLowerCase().includes('optimize')) {
-        responseContent = "I've analyzed your shipping patterns and identified several cost optimization opportunities. By consolidating shipments to Japan and South Korea, you could save approximately ₹280,000 monthly. Additionally, switching carriers for European routes could reduce costs by 8-12%. Would you like me to prepare a detailed cost optimization plan?";
-      } else if (content.toLowerCase().includes('delay') || content.toLowerCase().includes('risk')) {
-        responseContent = "I've detected potential delays in your Dubai supply chain due to reported port congestion. Current risk level is moderate (62/100). I recommend scheduling shipments 2 days earlier than usual for the next 2 weeks to mitigate delays. Would you like a comprehensive risk assessment for all your active routes?";
-      } else {
-        responseContent = "I understand you're interested in " + content + ". Based on your logistics data, I can help analyze this further. Would you like me to generate a detailed report on this topic, or would you prefer specific recommendations?";
-      }
-
-      const assistantMessage = {
-        id: messages.length + 2,
-        role: 'assistant',
-        content: responseContent,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+const AssistantPage = () => {
   return (
-    <div className="flex flex-col h-[calc(100vh-130px)]">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">AI Assistant</h1>
-        <div className="flex items-center space-x-2">
-          <button className="flex items-center space-x-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1.5 rounded-md text-sm">
-            <Info size={16} />
-            <span>Help</span>
-          </button>
-          <button className="flex items-center space-x-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1.5 rounded-md text-sm">
-            <RefreshCw size={16} />
-            <span>New Chat</span>
-          </button>
-        </div>
+    <div className="container mx-auto p-4 h-[calc(100vh-4rem)]">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">AI Assistant</h1>
+        <p className="text-muted-foreground">
+          Get insights from your logistics data through natural language queries
+        </p>
       </div>
-      
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="pb-3 border-b dark:border-gray-700">
-          <CardTitle className="flex items-center text-lg">
-            <Bot className="mr-2 h-5 w-5" />
-            <span>LogixSense AI Assistant</span>
-          </CardTitle>
-        </CardHeader>
+
+      <Tabs defaultValue="assistant" className="h-[calc(100%-6rem)]">
+        <TabsList className="mb-4">
+          <TabsTrigger value="assistant">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Assistant
+          </TabsTrigger>
+          <TabsTrigger value="about">
+            <Info className="h-4 w-4 mr-2" />
+            About
+          </TabsTrigger>
+          <TabsTrigger value="guide">
+            <BookOpen className="h-4 w-4 mr-2" />
+            User Guide
+          </TabsTrigger>
+        </TabsList>
         
-        <CardContent className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.role === 'assistant' ? 'justify-start' : 'justify-end'
-                }`}
-              >
-                <div
-                  className={`flex max-w-[80%] rounded-lg p-4 ${
-                    message.role === 'assistant'
-                      ? 'bg-gray-100 dark:bg-gray-800'
-                      : 'bg-blue-600 text-white'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center space-x-2 mb-1">
-                      {message.role === 'assistant' ? (
-                        <Bot className="h-4 w-4" />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                      <span className="text-xs">
-                        {message.role === 'assistant' ? 'AI Assistant' : 'You'}
-                      </span>
-                      <span className="text-xs opacity-70">
-                        {new Date(message.timestamp).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-sm">{message.content}</p>
-                  </div>
-                </div>
+        <TabsContent value="assistant" className="h-full">
+          <LogixAssistant />
+        </TabsContent>
+        
+        <TabsContent value="about">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="mr-2 h-5 w-5 text-primary" />
+                About LogixSense AI Assistant
+              </CardTitle>
+              <CardDescription>
+                Understand how the AI Assistant works and what it can do for you
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-2">What is LogixSense AI Assistant?</h3>
+                <p>
+                  LogixSense AI Assistant is an intelligent natural language interface that helps you analyze and 
+                  understand your logistics data. It uses advanced AI technologies to interpret your questions, 
+                  retrieve relevant information, and provide insightful answers.
+                </p>
               </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="flex max-w-[80%] rounded-lg p-4 bg-gray-100 dark:bg-gray-800">
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">LogixSense AI is thinking...</span>
-                  </div>
-                </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Technology Stack</h3>
+                <p>
+                  The assistant is powered by:
+                </p>
+                <ul className="list-disc pl-6 mt-2">
+                  <li><strong>Ollama with Mistral 7B</strong> - For natural language understanding and generation</li>
+                  <li><strong>FAISS Vector Database</strong> - For efficient similarity search of logistics data</li>
+                  <li><strong>Sentence Transformers</strong> - For generating embeddings of text data</li>
+                </ul>
               </div>
-            )}
-            
-            <div ref={endOfMessagesRef} />
-          </div>
-        </CardContent>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Features</h3>
+                <ul className="list-disc pl-6">
+                  <li>Natural language queries about your logistics data</li>
+                  <li>Contextual responses based on your historical shipment information</li>
+                  <li>Data-driven insights and analysis</li>
+                  <li>Trend identification and anomaly detection</li>
+                  <li>Performance metrics and KPI summaries</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Data Privacy & Security</h3>
+                <p>
+                  The AI Assistant processes all data locally. Your logistics data never leaves your servers, 
+                  as all processing happens on-premise. The system uses your own deployment of Ollama, 
+                  ensuring complete data privacy.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
-        {/* Suggestions */}
-        {showSuggestions && messages.length < 3 && (
-          <div className="px-4 py-3 border-t dark:border-gray-700">
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Try asking about:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full text-sm transition-colors"
-                  onClick={() => handleSendMessage(suggestion)}
-                >
-                  <span>{suggestion}</span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Input area */}
-        <div className="p-4 border-t dark:border-gray-700">
-          <div className="relative">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Type your message here..."
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg py-2 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800"
-            />
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={isLoading || !inputValue.trim()}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-md bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            LogixSense AI can analyze shipment data, identify trends, optimize routes, and more. Your interactions help improve the system.
-          </p>
-        </div>
-      </Card>
+        <TabsContent value="guide">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BookOpen className="mr-2 h-5 w-5 text-primary" />
+                LogixSense AI Assistant Guide
+              </CardTitle>
+              <CardDescription>
+                Learn how to use the AI Assistant effectively
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Getting Started</h3>
+                <ol className="list-decimal pl-6">
+                  <li className="mb-2">
+                    <strong>Initialize the Vector Database</strong>: Before using the assistant for the first time, 
+                    click the "Initialize DB" button in the top right corner. This will process your logistics data 
+                    and make it searchable.
+                  </li>
+                  <li className="mb-2">
+                    <strong>Check the Status Indicator</strong>: The badge in the top right shows if the assistant is online and ready.
+                  </li>
+                  <li className="mb-2">
+                    <strong>Ask Your First Question</strong>: Type a question in the input field at the bottom of the chat and press Enter or click Send.
+                  </li>
+                </ol>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Example Questions</h3>
+                <p>Try asking questions like:</p>
+                <ul className="list-disc pl-6 mt-2">
+                  <li>"What are our top shipping destinations?"</li>
+                  <li>"Show me the distribution of package weights"</li>
+                  <li>"Analyze shipping performance for the last month"</li>
+                  <li>"Which carriers have the best delivery times?"</li>
+                  <li>"What commodities do we ship most frequently?"</li>
+                  <li>"Are there any delivery delays I should be aware of?"</li>
+                  <li>"Compare shipping volumes between different countries"</li>
+                  <li>"What's the average weight of shipments to Europe?"</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Tips for Better Results</h3>
+                <ul className="list-disc pl-6">
+                  <li>
+                    <strong>Be Specific</strong>: Include specific metrics, time periods, or regions in your questions 
+                    for more targeted answers.
+                  </li>
+                  <li>
+                    <strong>One Topic at a Time</strong>: For complex analyses, break down your questions into smaller, 
+                    focused queries.
+                  </li>
+                  <li>
+                    <strong>Follow-up Questions</strong>: You can ask follow-up questions to dig deeper into specific aspects 
+                    of the previous response.
+                  </li>
+                  <li>
+                    <strong>Data Limitations</strong>: The assistant can only analyze data that's available in your 
+                    logistics database.
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Troubleshooting</h3>
+                <ul className="list-disc pl-6">
+                  <li>
+                    <strong>Assistant Offline</strong>: If the status shows "Offline," try clicking the refresh button. 
+                    If it remains offline, check if the backend services are running.
+                  </li>
+                  <li>
+                    <strong>Inaccurate Responses</strong>: If responses seem inaccurate, try reinitializing the vector 
+                    database, especially if your logistics data has been updated recently.
+                  </li>
+                  <li>
+                    <strong>Slow Responses</strong>: Complex queries involving large amounts of data may take longer to process. 
+                    Please be patient during peak usage times.
+                  </li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};
+
+export default AssistantPage;

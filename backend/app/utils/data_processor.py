@@ -104,9 +104,6 @@ class DataProcessor:
     def get_destination_analysis(self) -> List[Dict[str, Any]]:
         """
         Analyze shipment volumes by destination.
-        
-        Returns:
-            List of dictionaries with destination analysis
         """
         if self.df is None or self.df.empty or 'DSTNTN' not in self.df.columns:
             return []
@@ -120,15 +117,19 @@ class DataProcessor:
             .head(10)
         )
         
+        # Make sure values are numeric
+        destination_counts['value'] = pd.to_numeric(destination_counts['value'], errors='coerce')
+        
         # Calculate "Others" category for remaining destinations
         total = self.df['DSTNTN'].count()
         top_total = destination_counts['value'].sum()
         others = total - top_total
         
         if others > 0:
-            others_row = pd.DataFrame([{'name': 'Others', 'value': others}])
+            others_row = pd.DataFrame([{'name': 'Others', 'value': float(others)}])
             destination_counts = pd.concat([destination_counts, others_row])
         
+        # Convert to records
         return destination_counts.to_dict('records')
     
     def get_weight_distribution(self) -> List[Dict[str, Any]]:
@@ -181,8 +182,9 @@ class DataProcessor:
         date_df = self.df.dropna(subset=['BAG_DT'])
         
         # Add month column for grouping
-        date_df['month'] = date_df['BAG_DT'].dt.strftime('%b')
-        date_df['month_num'] = date_df['BAG_DT'].dt.month
+        date_df = date_df.copy()
+        date_df.loc[:, 'month'] = date_df['BAG_DT'].dt.strftime('%b')
+        date_df.loc[:, 'month_num'] = date_df['BAG_DT'].dt.month
         
         # Group by month and calculate metrics
         monthly_data = (
@@ -230,12 +232,15 @@ class DataProcessor:
             .head(5)
         )
         
+        # Make sure values are numeric
+        commodity_counts['value'] = pd.to_numeric(commodity_counts['value'], errors='coerce')
+        
         # Calculate "Others" category for remaining commodities
         top_total = commodity_counts['value'].sum()
-        others = 100 - top_total
+        others = float(100) - float(top_total)  # Convert to float to avoid type issues
         
         if others > 0:
-            others_row = pd.DataFrame([{'name': 'Others', 'value': others}])
+            others_row = pd.DataFrame([{'name': 'Others', 'value': float(others)}])
             commodity_counts = pd.concat([commodity_counts, others_row])
         
         return commodity_counts.to_dict('records')

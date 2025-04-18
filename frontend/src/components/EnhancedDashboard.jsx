@@ -146,8 +146,14 @@ export default function EnhancedDashboard() {
       ...prev,
       [type]: value
     }));
-    fetchForecast(type);
   };
+
+  // Add a dependency on selectedModels
+  useEffect(() => {
+    if (activeTab !== 'overview' && activeTab !== 'global') {
+      fetchForecast(activeTab);
+    }
+  }, [activeTab, selectedModels]);
 
   // Get gradient ID for RecHarts
   const getGradientId = (color) => `color${color}Gradient`;

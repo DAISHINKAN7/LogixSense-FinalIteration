@@ -1,5 +1,5 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -71,18 +71,18 @@ async def startup_db_client():
         global_shipping.set_data_processor(data_processor)
         forecasting.set_data_processor(data_processor)
         
-        # Try to load the assistant module
+        # Try to load the enhanced assistant module
         assistant = load_assistant_module()
         if assistant:
             # Clean up any existing fallback routes
             remove_existing_assistant_routes()
             
-            # Initialize the AI Assistant with the data processor
+            # Initialize the Enhanced AI Assistant with the data processor
             assistant.initialize_services(data_processor)
             
             # Add the assistant router
             app.include_router(assistant.router)
-            print("AI Assistant services initialized successfully")
+            print("Enhanced AI Assistant with full database analysis initialized successfully")
             print("Assistant router included in API routes")
             return  # Exit early to prevent creating fallback routes
         
@@ -854,7 +854,7 @@ async def get_assistant_config():
             "collection": os.getenv("QDRANT_COLLECTION", "logistics_data")
         }
         
-        # Get status from assistant module if available
+        # Get enhanced status from assistant module if available
         assistant_status = {}
         if assistant:
             try:
@@ -869,7 +869,12 @@ async def get_assistant_config():
             "external_llm": external_llm,
             "vector_db": vector_db,
             "assistant_status": assistant_status,
-            "data_processor_available": data_processor is not None
+            "data_processor_available": data_processor is not None,
+            "enhanced_features": {
+                "full_database_analysis": True,
+                "comprehensive_insights": True,
+                "visualization_enabled": True
+            }
         }
         
     except Exception as e:

@@ -377,13 +377,12 @@ export default function GlobalShippingPage() {
           </CardContent>
         </Card>
       )}
-
       {/* Recent Shipments */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Recent Global Shipments</CardTitle>
           <CardDescription>
-            Latest shipments across international routes
+            Latest actual shipments from dataset
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -395,31 +394,38 @@ export default function GlobalShippingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {shippingData.recentShipments && shippingData.recentShipments.map((shipment) => (
-                <div 
-                  key={shipment.id} 
-                  className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-medium">{shipment.id}</span>
-                    <StatusBadge status={shipment.status} />
-                  </div>
-                  <div className="flex items-center mb-2">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                    <div className="mx-2 text-gray-500 dark:text-gray-400 text-sm">
-                      {shipment.origin}
+              {shippingData.recentShipments && shippingData.recentShipments.length > 0 ? (
+                shippingData.recentShipments.map((shipment) => (
+                  <div 
+                    key={shipment.id} 
+                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="font-medium">{shipment.id}</span>
+                      <StatusBadge status={shipment.status} />
                     </div>
-                    <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="mx-2 text-gray-500 dark:text-gray-400 text-sm">
-                      {shipment.destination}
+                    <div className="flex items-center mb-2">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      <div className="mx-2 text-gray-500 dark:text-gray-400 text-sm">
+                        {shipment.origin}
+                      </div>
+                      <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+                      <div className="mx-2 text-gray-500 dark:text-gray-400 text-sm">
+                        {shipment.destination}
+                      </div>
+                      <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                     </div>
-                    <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Date: {new Date(shipment.actualDate || shipment.estimatedArrival).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Estimated arrival: {new Date(shipment.estimatedArrival).toLocaleDateString()}
-                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 p-6 text-center text-gray-500 dark:text-gray-400">
+                  <AlertTriangle className="w-5 h-5 mx-auto mb-2" />
+                  <p>No shipment data available in the dataset.</p>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </CardContent>

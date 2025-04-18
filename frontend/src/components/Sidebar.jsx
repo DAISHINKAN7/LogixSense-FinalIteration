@@ -1,175 +1,223 @@
-    // src/components/Sidebar.jsx
-    'use client';
+'use client';
 
-    import { useState } from 'react';
-    import Link from 'next/link';
-    import { usePathname } from 'next/navigation';
-    import { 
-    LayoutDashboard, 
-    BarChart2, 
-    TrendingUp, 
-    MessageSquare, 
-    Settings, 
-    Menu, 
-    X, 
-    LogOut,
-    Truck,
-    Globe,
-    AlertCircle
-    } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  BarChart2, 
+  TrendingUp, 
+  MessageSquare, 
+  Settings, 
+  Menu, 
+  X, 
+  Truck,
+  Globe,
+  AlertCircle
+} from 'lucide-react';
 
-    export default function Sidebar() {
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileOpen, setIsMobileOpen] = useState(false);
-    const pathname = usePathname();
+export default function Sidebar() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
 
-    const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-    const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    // Inform the layout of the change
+    localStorage.setItem('sidebarState', newState ? 'collapsed' : 'expanded');
+    window.dispatchEvent(new Event('storage'));
+  };
 
-    const navItems = [
-        {
-        title: 'Dashboard',
-        icon: <LayoutDashboard size={20} />,
-        href: '/dashboard',
-        },
-        {
-        title: 'Analytics',
-        icon: <BarChart2 size={20} />,
-        href: '/analytics',
-        },
-        {
-        title: 'Forecasting',
-        icon: <TrendingUp size={20} />,
-        href: '/forecasting',
-        },
-        {
-        title: 'Global Shipping',
-        icon: <Globe size={20} />,
-        href: '/global-shipping',
-        },
-        {
-        title: 'Shipment Tracking',
-        icon: <Truck size={20} />,
-        href: '/shipment-tracking',
-        },
-        {
-        title: 'Risk Analysis',
-        icon: <AlertCircle size={20} />,
-        href: '/risk-analysis',
-        },
-        {
-        title: 'AI Assistant',
-        icon: <MessageSquare size={20} />,
-        href: '/assistant',
-        },
-        {
-        title: 'Settings',
-        icon: <Settings size={20} />,
-        href: '/settings',
-        },
-    ];
+  const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
 
-    const sidebarClass = `
-    fixed top-0 left-0 z-40 h-screen transition-all duration-300 
-    bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-    ${isCollapsed ? 'w-20' : 'w-64'} 
+  const navItems = [
+    {
+      title: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      href: '/dashboard',
+    },
+    {
+      title: 'Analytics',
+      icon: <BarChart2 size={20} />,
+      href: '/analytics',
+    },
+    {
+      title: 'Forecasting',
+      icon: <TrendingUp size={20} />,
+      href: '/forecasting',
+    },
+    {
+      title: 'Global Shipping',
+      icon: <Globe size={20} />,
+      href: '/global-shipping',
+    },
+    {
+      title: 'Shipment Tracking',
+      icon: <Truck size={20} />,
+      href: '/shipment-tracking',
+    },
+    {
+      title: 'Risk Analysis',
+      icon: <AlertCircle size={20} />,
+      href: '/risk-analysis',
+    },
+    {
+      title: 'AI Assistant',
+      icon: <MessageSquare size={20} />,
+      href: '/assistant',
+    },
+    {
+      title: 'Settings',
+      icon: <Settings size={20} />,
+      href: '/settings',
+    },
+  ];
+
+  // Desktop sidebar - fixed to side with no gap
+  const sidebarClass = `
+    fixed top-0 left-0 z-40 h-screen
+    bg-indigo-800 dark:bg-gray-800
+    transition-all duration-300 ease-in-out
+    ${isCollapsed ? 'w-16' : 'w-64'} 
     hidden md:block
-    `;
+  `;
 
-    // Change the mobile sidebar closing logic to ensure it's completely hidden when closed
-    const mobileSidebarClass = `
-    fixed top-0 left-0 z-50 h-screen transition-transform duration-300 ease-in-out
-    bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-    w-64 md:hidden
-    ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-    `;
+  // Mobile sidebar - fully hidden when collapsed
+  const mobileSidebarClass = `
+    fixed top-0 left-0 z-50 h-screen
+    bg-indigo-800 dark:bg-gray-800
+    w-64
+    transform ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+    transition-transform duration-300 ease-in-out
+    md:hidden
+  `;
 
-    const renderNavItems = () => (
-        <ul className="space-y-2 mt-5">
-        {navItems.map((item) => (
-            <li key={item.href}>
+  const renderNavItems = () => (
+    <ul className="space-y-2 mt-6">
+      {navItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <li key={item.href}>
             <Link 
-                href={item.href}
-                className={`
-                flex items-center p-3 text-base font-medium rounded-lg
-                hover:bg-gray-100 dark:hover:bg-gray-700
-                ${pathname === item.href ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-500' : 'text-gray-900 dark:text-white'}
+              href={item.href}
+              className={`
+                flex items-center p-2 mx-3 rounded-lg
+                ${isActive 
+                  ? 'bg-indigo-700 text-white dark:bg-gray-700' 
+                  : 'text-white hover:bg-indigo-700 dark:hover:bg-gray-700'}
                 ${isCollapsed ? 'justify-center' : ''}
-                `}
+              `}
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  toggleMobileSidebar();
+                }
+              }}
             >
+              <div>
                 {item.icon}
-                {!isCollapsed && <span className="ml-3">{item.title}</span>}
+              </div>
+              
+              {!isCollapsed && <span className="ml-3">{item.title}</span>}
             </Link>
-            </li>
-        ))}
-        </ul>
-    );
+          </li>
+        );
+      })}
+    </ul>
+  );
 
-    return (
-        <>
-        {/* Desktop Sidebar */}
-        <aside className={sidebarClass}>
-            <div className="h-full px-3 py-4 overflow-y-auto">
-            <div className="flex items-center justify-between">
-                {!isCollapsed && (
-                <Link href="/dashboard" className="flex items-center space-x-3">
-                    <span className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">LS</span>
-                    </span>
-                    <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">LogixSense</span>
-                </Link>
-                )}
-                <button
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className={sidebarClass}>
+        <div className="h-full py-4 overflow-y-auto">
+          <div className="flex items-center justify-between px-3 mb-6">
+            {!isCollapsed && (
+              <Link href="/dashboard" className="flex items-center space-x-3">
+                <span className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-indigo-800 font-bold">LS</span>
+                </span>
+                <span className="self-center text-xl font-semibold whitespace-nowrap text-white">LogixSense</span>
+              </Link>
+            )}
+            {isCollapsed && (
+              <Link href="/dashboard" className="flex items-center justify-center w-full">
+                <span className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-indigo-800 font-bold">LS</span>
+                </span>
+              </Link>
+            )}
+            {!isCollapsed && (
+              <button
                 type="button"
                 onClick={toggleSidebar}
-                className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400"
-                >
-                {isCollapsed ? <Menu size={20} /> : <X size={20} />}
-                </button>
-            </div>
-            {renderNavItems()}
-            </div>
-        </aside>
-
-        {/* Mobile Sidebar */}
-        <div className="md:hidden">
-            <button
-            type="button"
-            onClick={toggleMobileSidebar}
-            className="inline-flex items-center p-2 ml-3 text-sm text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none"
-            >
-            <Menu size={24} />
-            </button>
-        </div>
-        
-        <aside className={mobileSidebarClass}>
-            <div className="h-full px-3 py-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-                <Link href="/dashboard" className="flex items-center space-x-3">
-                <span className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">LS</span>
-                </span>
-                <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">LogixSense</span>
-                </Link>
-                <button
+                className="inline-flex items-center p-1 rounded-lg text-gray-200 hover:bg-indigo-700"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          
+          {renderNavItems()}
+          
+          {/* Expand button at bottom when collapsed */}
+          {isCollapsed && (
+            <div className="absolute bottom-4 w-full flex justify-center">
+              <button
                 type="button"
-                onClick={toggleMobileSidebar}
-                className="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400"
-                >
-                <X size={20} />
-                </button>
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg text-gray-200 hover:bg-indigo-700"
+              >
+                <Menu size={20} />
+              </button>
             </div>
-            {renderNavItems()}
-            </div>
-        </aside>
+          )}
+        </div>
+      </aside>
 
-        {/* Overlay */}
-        {isMobileOpen && (
-            <div 
-            className="fixed inset-0 z-40 bg-gray-900 bg-opacity-50 md:hidden"
-            onClick={toggleMobileSidebar}
-            />
-        )}
-        </>
-    );
-    }
+      {/* Mobile Menu Button */}
+      <div className="fixed top-4 left-4 z-40 md:hidden">
+        <button
+          type="button"
+          onClick={toggleMobileSidebar}
+          aria-label="Toggle navigation menu"
+          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md"
+        >
+          <Menu size={24} className="text-indigo-800 dark:text-gray-200" />
+        </button>
+      </div>
+      
+      {/* Mobile Sidebar */}
+      <aside className={mobileSidebarClass}>
+        <div className="h-full py-4 overflow-y-auto">
+          <div className="flex items-center justify-between px-3 mb-6">
+            <Link href="/dashboard" className="flex items-center space-x-3">
+              <span className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+                <span className="text-indigo-800 font-bold">LS</span>
+              </span>
+              <span className="self-center text-xl font-semibold whitespace-nowrap text-white">LogixSense</span>
+            </Link>
+            <button
+              type="button"
+              onClick={toggleMobileSidebar}
+              className="inline-flex items-center p-1 rounded-lg text-gray-200 hover:bg-indigo-700"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          
+          {renderNavItems()}
+        </div>
+      </aside>
+
+      {/* Overlay when mobile sidebar is open */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={toggleMobileSidebar}
+          aria-hidden="true"
+        />
+      )}
+    </>
+  );
+}

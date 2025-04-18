@@ -13,6 +13,7 @@ const nextConfig = {
     },
     experimental: {
       proxyTimeout: 600000, // 10 minutes
+      appDir: true,
     },
     serverRuntimeConfig: {
       apiTimeout: 120000 // 2 minutes
